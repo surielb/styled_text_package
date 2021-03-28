@@ -1,4 +1,5 @@
 import 'dart:ui' as ui show TextStyle, ParagraphStyle, FontFeature;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -10,7 +11,6 @@ class CustomStyle with Diagnosticable implements TextStyle {
   CustomStyle({this.baseStyle});
 
   TextStyle get style => baseStyle ?? const TextStyle();
-
   @override
   TextStyle apply(
       {Color? color,
@@ -33,6 +33,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       double heightFactor = 1.0,
       double heightDelta = 0.0,
       TextBaseline? textBaseline,
+      TextLeadingDistribution? leadingDistribution,
       Locale? locale,
       List<Shadow>? shadows,
       List<ui.FontFeature>? fontFeatures}) {
@@ -82,6 +83,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       {bool? inherit,
       Color? color,
       Color? backgroundColor,
+      TextLeadingDistribution? leadingDistribution,
       String? fontFamily,
       List<String>? fontFamilyFallback,
       double? fontSize,
@@ -102,29 +104,29 @@ class CustomStyle with Diagnosticable implements TextStyle {
       double? decorationThickness,
       String? debugLabel}) {
     return style.copyWith(
-      inherit: inherit,
-      color: color,
-      backgroundColor: backgroundColor,
-      fontFamily: fontFamily,
-      fontFamilyFallback: fontFamilyFallback,
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      fontStyle: fontStyle,
-      letterSpacing: letterSpacing,
-      wordSpacing: wordSpacing,
-      textBaseline: textBaseline,
-      height: height,
-      locale: locale,
-      foreground: foreground,
-      background: background,
-      shadows: shadows,
-      fontFeatures: fontFeatures,
-      decoration: decoration,
-      decorationColor: decorationColor,
-      decorationStyle: decorationStyle,
-      decorationThickness: decorationThickness,
-      debugLabel: debugLabel,
-    );
+        inherit: inherit,
+        color: color,
+        backgroundColor: backgroundColor,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+        textBaseline: textBaseline,
+        height: height,
+        locale: locale,
+        foreground: foreground,
+        background: background,
+        shadows: shadows,
+        fontFeatures: fontFeatures,
+        decoration: decoration,
+        decorationColor: decorationColor,
+        decorationStyle: decorationStyle,
+        decorationThickness: decorationThickness,
+        debugLabel: debugLabel,
+        leadingDistribution: leadingDistribution);
   }
 
   @override
@@ -232,4 +234,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
 
   @override
   double? get wordSpacing => style.wordSpacing;
+
+  @override
+  TextLeadingDistribution? get leadingDistribution => style.leadingDistribution;
 }
