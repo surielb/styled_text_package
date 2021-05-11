@@ -33,6 +33,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       double heightFactor = 1.0,
       double heightDelta = 0.0,
       TextBaseline? textBaseline,
+       TextOverflow? overflow,
       TextLeadingDistribution? leadingDistribution,
       Locale? locale,
       List<Shadow>? shadows,
@@ -60,6 +61,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       textBaseline: textBaseline,
       locale: locale,
       shadows: shadows,
+      overflow:overflow,
       fontFeatures: fontFeatures,
     );
   }
@@ -100,6 +102,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       List<ui.FontFeature>? fontFeatures,
       TextDecoration? decoration,
       Color? decorationColor,
+       TextOverflow? overflow,
       TextDecorationStyle? decorationStyle,
       double? decorationThickness,
       String? debugLabel}) {
@@ -117,6 +120,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
         textBaseline: textBaseline,
         height: height,
         locale: locale,
+      overflow:overflow,
         foreground: foreground,
         background: background,
         shadows: shadows,
@@ -229,6 +233,8 @@ class CustomStyle with Diagnosticable implements TextStyle {
   @override
   TextBaseline? get textBaseline => style.textBaseline;
 
+  @override
+  TextOverflow? get overflow=>style.overflow;
   @override
   String toStringShort() => style.toStringShort();
 
