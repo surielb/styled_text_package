@@ -17,15 +17,15 @@ class MyApp extends StatelessWidget {
 }
 
 class DemoPage extends StatelessWidget {
-  void _alert(BuildContext context) {
+  void _alert(BuildContext context, {String text = 'Tapped'}) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Tapped'),
+          content: Text(text),
           actions: <Widget>[
             TextButton(
-              child: Text('Ok'),
+              child: Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -66,33 +66,48 @@ class DemoPage extends StatelessWidget {
       ),
       body: Center(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               // Simple formatted text
               StyledText(
                 text: 'Test: <b>bold</b> text.',
-                styles: {
-                  'b': TextStyle(fontWeight: FontWeight.bold),
+                tags: {
+                  'b': StyledTextTag(
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                },
+              ),
+
+              // Nested multiple styles
+              StyledText(
+                text: 'Test: <b>bold <i>italic</i> bold</b> text.',
+                tags: {
+                  'b': StyledTextTag(
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  'i': StyledTextTag(
+                      style: TextStyle(fontStyle: FontStyle.italic)),
                 },
               ),
 
               // Text with quotes
-              const SizedBox(height: 20),
               StyledText(
-                text: 'Quoted Test: <b>&quot;bold&quot;</b> text.',
-                styles: {
-                  'b': TextStyle(fontWeight: FontWeight.bold),
+                text: 'Quote test: <b>&quot;bold&quot;</b> text.',
+                tags: {
+                  'b': StyledTextTag(
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 },
               ),
 
               // Multiline text without breaks
               const SizedBox(height: 20),
               StyledText(
+                newLineAsBreaks: false,
                 text: """Multiline text 
 (wo breaks)""",
-                styles: {
-                  'b': TextStyle(fontWeight: FontWeight.bold),
+                tags: {
+                  'b': StyledTextTag(
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 },
               ),
 
@@ -101,20 +116,9 @@ class DemoPage extends StatelessWidget {
               StyledText(
                 text: """Multiline text
 (with breaks)""",
-                newLineAsBreaks: true,
-                styles: {
-                  'b': TextStyle(fontWeight: FontWeight.bold),
-                },
-              ),
-
-              // Custom tags styles
-              const SizedBox(height: 20),
-              StyledText(
-                text: 'Test: <bold>bold</bold> and <red>red color</red> text.',
-                styles: {
-                  'bold': TextStyle(fontWeight: FontWeight.bold),
-                  'red':
-                      TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                tags: {
+                  'b': StyledTextTag(
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 },
               ),
 
@@ -122,19 +126,29 @@ class DemoPage extends StatelessWidget {
               const SizedBox(height: 20),
               StyledText(
                 text: 'Text with alarm <alarm/> icon.',
-                styles: {
-                  'alarm': IconStyle(Icons.alarm),
+                tags: {
+                  'alarm': StyledTextIconTag(
+                    Icons.alarm,
+                    color: Colors.teal,
+                    size: 18,
+                    onTap: (text, attributes) =>
+                        _alert(context, text: 'Alarm Tapped'),
+                  ),
                 },
               ),
 
-              // Text with action
+              // Text with icon inside styled text
               const SizedBox(height: 20),
               StyledText(
-                text: 'Text with <action>action</action> inside.',
-                styles: {
-                  'action': ActionTextStyle(
-                    decoration: TextDecoration.underline,
-                    onTap: (_, __) => _alert(context),
+                text: 'Text with <red>alarm <alarm/> icon</red>.',
+                tags: {
+                  'red': StyledTextTag(style: TextStyle(color: Colors.red)),
+                  'alarm': StyledTextIconTag(
+                    Icons.alarm,
+                    color: Colors.teal,
+                    size: 18,
+                    onTap: (text, attributes) =>
+                        _alert(context, text: 'Alarm Tapped'),
                   ),
                 },
               ),
@@ -144,10 +158,41 @@ class DemoPage extends StatelessWidget {
               StyledText(
                 text:
                     'Text with <link href="https://flutter.dev">link</link> inside.',
-                styles: {
-                  'link': ActionTextStyle(
-                    decoration: TextDecoration.underline,
-                    onTap: (_, attrs) => _openLink(context, attrs),
+                tags: {
+                  'link': StyledTextActionTag(
+                    (_, attrs) => _openLink(context, attrs),
+                    style: TextStyle(decoration: TextDecoration.underline),
+                  ),
+                },
+              ),
+
+              // Text with action
+              const SizedBox(height: 20),
+              StyledText(
+                text:
+                    'Text with <action><red>red</red> action</action> inside.',
+                tags: {
+                  'red': StyledTextTag(style: TextStyle(color: Colors.red)),
+                  'action': StyledTextActionTag(
+                    (text, attributes) => _alert(context),
+                    style: TextStyle(decoration: TextDecoration.underline),
+                  ),
+                },
+              ),
+
+              // Text with widget
+              const SizedBox(height: 20),
+              StyledText(
+                text: 'Text with <input/> inside.',
+                tags: {
+                  'input': StyledTextWidgetTag(
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Input',
+                      ),
+                    ),
+                    size: Size.fromWidth(200),
+                    constraints: BoxConstraints.tight(Size(100, 50)),
                   ),
                 },
               ),
@@ -157,8 +202,9 @@ class DemoPage extends StatelessWidget {
               // Selectable text
               StyledText.selectable(
                 text: 'Test: selectable <b>bold</b> text.',
-                styles: {
-                  'b': TextStyle(fontWeight: FontWeight.bold),
+                tags: {
+                  'b': StyledTextTag(
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 },
               ),
 
@@ -168,8 +214,8 @@ class DemoPage extends StatelessWidget {
               StyledText(
                 text:
                     'Text with custom <color text="#ff5500">color</color> text.',
-                styles: {
-                  'color': CustomTextStyle(
+                tags: {
+                  'color': StyledTextCustomTag(
                       baseStyle: TextStyle(fontStyle: FontStyle.italic),
                       parse: (baseStyle, attributes) {
                         if (attributes.containsKey('text') &&
