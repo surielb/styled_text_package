@@ -1,9 +1,11 @@
-import 'dart:ui' as ui show TextStyle, ParagraphStyle, FontFeature;
+import 'dart:ui' as ui
+    show TextStyle, ParagraphStyle, FontFeature, TextLeadingDistribution;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// @nodoc
+@deprecated
 class CustomStyle with Diagnosticable implements TextStyle {
   /// Basic text style.
   final TextStyle? baseStyle;
@@ -33,7 +35,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       double heightFactor = 1.0,
       double heightDelta = 0.0,
       TextBaseline? textBaseline,
-       TextOverflow? overflow,
+      TextOverflow? overflow,
       TextLeadingDistribution? leadingDistribution,
       Locale? locale,
       List<Shadow>? shadows,
@@ -59,9 +61,10 @@ class CustomStyle with Diagnosticable implements TextStyle {
       heightFactor: heightFactor,
       heightDelta: heightDelta,
       textBaseline: textBaseline,
+      leadingDistribution: leadingDistribution,
       locale: locale,
       shadows: shadows,
-      overflow:overflow,
+      overflow: overflow,
       fontFeatures: fontFeatures,
     );
   }
@@ -95,6 +98,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       double? wordSpacing,
       TextBaseline? textBaseline,
       double? height,
+      ui.TextLeadingDistribution? leadingDistribution,
       Locale? locale,
       Paint? foreground,
       Paint? background,
@@ -102,7 +106,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
       List<ui.FontFeature>? fontFeatures,
       TextDecoration? decoration,
       Color? decorationColor,
-       TextOverflow? overflow,
+      TextOverflow? overflow,
       TextDecorationStyle? decorationStyle,
       double? decorationThickness,
       String? debugLabel}) {
@@ -120,7 +124,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
         textBaseline: textBaseline,
         height: height,
         locale: locale,
-      overflow:overflow,
+        overflow: overflow,
         foreground: foreground,
         background: background,
         shadows: shadows,
@@ -216,6 +220,10 @@ class CustomStyle with Diagnosticable implements TextStyle {
   double? get height => style.height;
 
   @override
+  ui.TextLeadingDistribution? get leadingDistribution =>
+      style.leadingDistribution;
+
+  @override
   bool get inherit => style.inherit;
 
   @override
@@ -234,7 +242,7 @@ class CustomStyle with Diagnosticable implements TextStyle {
   TextBaseline? get textBaseline => style.textBaseline;
 
   @override
-  TextOverflow? get overflow=>style.overflow;
+  TextOverflow? get overflow => style.overflow;
   @override
   String toStringShort() => style.toStringShort();
 

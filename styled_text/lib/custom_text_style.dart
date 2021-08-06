@@ -30,6 +30,7 @@ typedef CustomTextStyleCallback = TextStyle? Function(
 /// )
 /// ```
 ///
+@deprecated
 class CustomTextStyle extends CustomStyle {
   /// Called when parsing the attributes of a tag.
   final CustomTextStyleCallback parse;

@@ -4,58 +4,33 @@ import 'dart:collection';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:styled_text/action_text_style.dart';
-import 'package:styled_text/custom_text_style.dart';
 import 'package:xmlstream/xmlstream.dart';
+import 'package:styled_text/tags/styled_text_tag.dart';
+import 'package:styled_text/tags/styled_text_tag_base.dart';
 
+export 'icon_style.dart';
 export 'custom_text_style.dart';
 export 'action_text_style.dart';
 
-///
-/// The style to insert the icon into styled text.
-///
-/// Example:
-/// ```dart
-/// StyledText(
-///   text: 'Text with alarm <alarm/> icon.',
-///   styles: {
-///     'alarm': IconStyle(Icons.alarm),
-///   },
-/// )
-/// ```
-///
-class IconStyle extends TextStyle {
-  /// Icon to insert into text
-  final IconData icon;
-
-  /// Icon color
-  final Color? color;
-
-  /// Icon size
-  final double? size;
-
-  /// Icon background color
-  final Color? backgroundColor;
-
-  IconStyle(
-    this.icon, {
-    this.color,
-    this.size,
-    this.backgroundColor,
-  });
-}
+export 'tags/styled_text_tag_base.dart';
+export 'tags/styled_text_tag.dart';
+export 'tags/styled_text_tag_icon.dart';
+export 'tags/styled_text_tag_action.dart';
+export 'tags/styled_text_tag_widget.dart';
+export 'tags/styled_text_tag_widget_builder.dart';
+export 'tags/styled_text_tag_custom.dart';
 
 ///
 /// Text widget with formatting via tags.
 ///
-/// Formatting is specified as xml tags. For each tag, you can specify a style in the [styles] parameter.
+/// Formatting is specified as xml tags. For each tag, you can specify a style, icon, etc. in the [tags] parameter.
 ///
 /// Example:
 /// ```dart
 /// StyledText(
 ///   text: '<red>Red</red> text.',
-///   styles: [
-///     'red': TextStyle(color: Colors.red),
+///   tags: [
+///     'red': StyledTextTag(style: TextStyle(color: Colors.red)),
 ///   ],
 /// )
 /// ```
@@ -102,7 +77,21 @@ class StyledText extends StatefulWidget {
   ///   ],
   /// )
   /// ```
+  @Deprecated('Use tags instead of styles.')
   final Map<String, TextStyle> styles;
+
+  /// Map of tag assignments to text style classes and tag handlers.
+  ///
+  /// Example:
+  /// ```dart
+  /// StyledText(
+  ///   text: '<red>Red</red> text.',
+  ///   tags: [
+  ///     'red': StyledTextTag(style: TextStyle(color: Colors.red)),
+  ///   ],
+  /// )
+  /// ```
+  final Map<String, StyledTextTagBase> tags;
 
   /// How the text should be aligned horizontally.
   final TextAlign textAlign;
@@ -149,9 +138,11 @@ class StyledText extends StatefulWidget {
   StyledText({
     Key? key,
     required this.text,
-    this.newLineAsBreaks = false,
+    this.newLineAsBreaks = true,
     this.style,
-    required this.styles,
+    @Deprecated('Use tags property instead of styles')
+        Map<String, TextStyle>? styles,
+    Map<String, StyledTextTagBase>? tags,
     this.textAlign = TextAlign.start,
     this.textDirection,
     this.softWrap = true,
@@ -160,7 +151,14 @@ class StyledText extends StatefulWidget {
     this.maxLines,
     this.locale,
     this.strutStyle,
-  })  : this.selectable = false,
+  })  : assert(
+          styles != null || tags != null,
+          'Styles and tags cannot be used at the same time. Use styles for compatibility only. They will be removed in future versions.',
+        ),
+        this.styles = // ignore: deprecated_member_use_from_same_package
+            styles ?? const {},
+        this.tags = tags ?? const {},
+        this.selectable = false,
         this._focusNode = null,
         this._showCursor = false,
         this._autofocus = false,
@@ -185,7 +183,9 @@ class StyledText extends StatefulWidget {
       required this.text,
       this.newLineAsBreaks = false,
       this.style,
-      required this.styles,
+      @Deprecated('Use tags property instead of styles')
+          Map<String, TextStyle>? styles,
+      Map<String, StyledTextTagBase>? tags,
       this.textAlign = TextAlign.start,
       this.textDirection,
       this.textScaleFactor = 1.0,
@@ -205,7 +205,14 @@ class StyledText extends StatefulWidget {
       ScrollPhysics? scrollPhysics,
       TextHeightBehavior? textHeightBehavior,
       TextWidthBasis? textWidthBasis})
-      : this.selectable = true,
+      : assert(
+          styles != null || tags != null,
+          'Styles and tags cannot be used at the same time. Use styles for compatibility only. They will be removed in future versions.',
+        ),
+        this.styles = // ignore: deprecated_member_use_from_same_package
+            styles ?? const {},
+        this.tags = tags ?? const {},
+        this.selectable = true,
         this.softWrap = true,
         this.overflow = TextOverflow.clip,
         this.locale = null,
@@ -251,6 +258,7 @@ class StyledText extends StatefulWidget {
 class _StyledTextState extends State<StyledText> {
   String? _text;
   TextSpan? _textSpans;
+  _Node? _rootNode;
 
   @override
   void didChangeDependencies() {
@@ -263,11 +271,32 @@ class _StyledTextState extends State<StyledText> {
     super.didUpdateWidget(oldWidget);
 
     if ((widget.text != oldWidget.text) ||
-        (widget.styles != oldWidget.styles) ||
+        (widget.tags != oldWidget.tags) ||
+        (widget.styles != // ignore: deprecated_member_use_from_same_package
+            oldWidget
+                .styles) || // ignore: deprecated_member_use_from_same_package
         (widget.style != oldWidget.style) ||
         (widget.newLineAsBreaks != oldWidget.newLineAsBreaks)) {
       _updateTextSpans(force: true);
     }
+  }
+
+  StyledTextTagBase? _tag(String? tagName) {
+    if (tagName == null) return null;
+
+    if (widget.tags.containsKey(tagName)) {
+      return widget.tags[tagName];
+    }
+
+    // ignore: deprecated_member_use_from_same_package
+    if (widget.styles.containsKey(tagName)) {
+      return StyledTextTag(
+          style:
+              widget.styles[// ignore: deprecated_member_use_from_same_package
+                  tagName]);
+    }
+
+    return null;
   }
 
   // Parse text
@@ -282,11 +311,13 @@ class _StyledTextState extends State<StyledText> {
         textValue = textValue.replaceAll("\n", '<br/>');
       }
 
+      _rootNode?.dispose();
+
       TextStyle defaultStyle = (widget.style != null)
           ? DefaultTextStyle.of(context).style.merge(widget.style)
           : DefaultTextStyle.of(context).style;
-      TextSpan node = TextSpan(style: defaultStyle, children: []);
-      ListQueue<TextSpan> textQueue = ListQueue();
+      _Node node = _TextNode();
+      ListQueue<_Node> textQueue = ListQueue();
       Map<String?, String?>? attributes;
 
       var xmlStreamer = new XmlStreamer(
@@ -298,71 +329,31 @@ class _StyledTextState extends State<StyledText> {
         switch (e.state) {
           case XmlState.Text:
           case XmlState.CDATA:
-            if (node.children != null) {
-              node.children!.add(TextSpan(
-                  text: (e.value != null)
-                      ? e.value!
-                          .replaceAll('&space;', ' ')
-                          .replaceAll('&nbsp;', ' ')
-                          .replaceAll('&quot;', '"')
-                          .replaceAll('&apos;', "'")
-                          .replaceAll('&amp;', '&')
-                          .replaceAll('&lt;', "<")
-                          .replaceAll('&gt;', ">")
-                      : e.value,
-                  recognizer: node.recognizer));
-            }
+            node.children.add(
+              _TextNode(text: e.value),
+            );
             break;
 
           case XmlState.Open:
             textQueue.addLast(node);
 
             if (e.value == 'br') {
-              node = TextSpan(text: "\n");
+              node = _TextNode(text: "\n");
             } else {
-              TextStyle? style =
-                  (e.value != null) ? widget.styles[e.value!] : null;
+              StyledTextTagBase? tag = _tag(e.value);
+              node = _TagNode(tag: tag);
               attributes = {};
-
-              if (style is IconStyle) {
-                node = TextSpan(
-                  text: String.fromCharCode(style.icon.codePoint),
-                  style: TextStyle(
-                    fontFamily: style.icon.fontFamily,
-                    package: style.icon.fontPackage,
-                    color: style.color,
-                    fontSize: style.size,
-                    backgroundColor: style.backgroundColor,
-                  ),
-                );
-              } else {
-                final _StyledTextRecoginzer? recognizer =
-                    ((style is ActionTextStyle) && style.onTap != null)
-                        ? _StyledTextRecoginzer(onTextTap: style.onTap)
-                        : null;
-
-                node = TextSpan(
-                    style: style, children: [], recognizer: recognizer);
-              }
             }
 
             break;
 
           case XmlState.Closed:
-            if (node.recognizer is _StyledTextRecoginzer) {
-              (node.recognizer as _StyledTextRecoginzer)
-                ..text = node
-                ..attributes = attributes;
-            }
-
-            if (node.style is CustomTextStyle) {
-              (node.style as CustomTextStyle).configure(attributes);
-            }
+            node.configure(attributes);
 
             if (textQueue.isNotEmpty) {
-              final TextSpan child = node;
+              final _Node child = node;
               node = textQueue.removeLast();
-              node.children?.add(child);
+              node.children.add(child);
             }
 
             break;
@@ -381,14 +372,29 @@ class _StyledTextState extends State<StyledText> {
             break;
         }
       }).onDone(() {
-        if (mounted) {
-          setState(() {
-            _textSpans = node;
-          });
-        } else {
-          _textSpans = node;
-        }
+        _rootNode = node;
+        _buildTextSpans(_rootNode, defaultStyle);
       });
+    } else {
+      if (_rootNode != null && _textSpans == null) {
+        _buildTextSpans(_rootNode);
+      }
+    }
+  }
+
+  void _buildTextSpans(_Node? node, [TextStyle? defaultStyle]) {
+    if (mounted && node != null) {
+      TextStyle? style = defaultStyle;
+      if (style == null) {
+        style = (widget.style != null)
+            ? DefaultTextStyle.of(context).style.merge(widget.style)
+            : DefaultTextStyle.of(context).style;
+      }
+
+      final span = node.createSpan(context: context);
+      _textSpans = TextSpan(style: style, children: [span]);
+
+      setState(() {});
     }
   }
 
@@ -438,20 +444,106 @@ class _StyledTextState extends State<StyledText> {
   }
 }
 
-class _StyledTextRecoginzer extends TapGestureRecognizer {
-  ActionTappedCallback? onTextTap;
-  TextSpan? text;
-  Map<String?, String?>? attributes;
+abstract class _Node {
+  String? text;
+  final List<_Node> children = [];
 
-  _StyledTextRecoginzer({
-    this.text,
-    this.attributes,
-    this.onTextTap,
-  }) : super() {
-    this.onTap = _textTap;
+  InlineSpan createSpan({
+    required BuildContext context,
+    GestureRecognizer? recognizer,
+  });
+
+  void configure(Map<String?, String?>? attributes) {}
+
+  List<InlineSpan> createChildren({
+    required BuildContext context,
+    GestureRecognizer? recognizer,
+  }) {
+    return children
+        .map((c) => c.createSpan(context: context, recognizer: recognizer))
+        .toList();
   }
 
-  void _textTap() {
-    onTextTap?.call(text, attributes ?? const {});
+  void dispose() {
+    for (var node in children) {
+      node.dispose();
+    }
+  }
+}
+
+class _TagNode extends _Node {
+  StyledTextTagBase? tag;
+  Map<String?, String?> attributes = {};
+  GestureRecognizer? _recognizer;
+
+  _TagNode({
+    this.tag,
+  });
+
+  @override
+  void dispose() {
+    _recognizer?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void configure(Map<String?, String?>? attributes) {
+    if (attributes != null && attributes.isNotEmpty) {
+      this.attributes.addAll(attributes);
+    }
+  }
+
+  @override
+  InlineSpan createSpan({
+    required BuildContext context,
+    GestureRecognizer? recognizer,
+  }) {
+    _recognizer = tag?.createRecognizer(text, attributes) ?? recognizer;
+    InlineSpan? result = (tag != null)
+        ? tag!.createSpan(
+            context: context,
+            text: text,
+            children: createChildren(context: context, recognizer: _recognizer),
+            attributes: attributes,
+            recognizer: _recognizer,
+          )
+        : null;
+    if (result == null) {
+      result = TextSpan(
+        text: text,
+        children: createChildren(context: context, recognizer: _recognizer),
+      );
+    }
+    return result;
+  }
+}
+
+class _TextNode extends _Node {
+  final String? _text;
+
+  _TextNode({
+    String? text,
+  }) : _text = text;
+
+  @override
+  String? get text => _text
+      ?.replaceAll('&space;', ' ')
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&apos;', "'")
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', "<")
+      .replaceAll('&gt;', ">");
+
+  @override
+  InlineSpan createSpan({
+    required BuildContext context,
+    GestureRecognizer? recognizer,
+  }) {
+    return TextSpan(
+      text: text,
+      children: createChildren(context: context, recognizer: recognizer),
+      recognizer: recognizer,
+    );
   }
 }
