@@ -88,7 +88,6 @@ class CustomStyle with Diagnosticable implements TextStyle {
       {bool? inherit,
       Color? color,
       Color? backgroundColor,
-      TextLeadingDistribution? leadingDistribution,
       String? fontFamily,
       List<String>? fontFamilyFallback,
       double? fontSize,
