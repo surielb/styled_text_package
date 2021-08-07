@@ -248,7 +248,4 @@ class CustomStyle with Diagnosticable implements TextStyle {
 
   @override
   double? get wordSpacing => style.wordSpacing;
-
-  @override
-  TextLeadingDistribution? get leadingDistribution => style.leadingDistribution;
 }
